@@ -1,0 +1,287 @@
+---
+title: "HW1_SuhaasAdiraju"
+author: "SuhaasAdiraju"
+date: "2024-09-11"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+utils::install.packages("tinytex")
+utils::install.packages("ISLR")
+utils::install.packages("ggplot2")
+utils::install.packages("GGally")
+utils::install.packages("psych")
+
+
+## Homework 1 Statistical ML 
+## Section 3
+# Question 5
+We know that our initial eq. of fitted vals is:
+$${\hat{y_i} = x_i\hat{\beta}}$$
+
+Next we are given:
+$$
+{\hat{\beta} = (\sum_{i=1}^nx_iy_i) / (\sum_{i'=1}^nx_{i'}^2)}
+$$
+We can rewrite
+
+$$
+{\hat{y}_i = x_i((\sum_{j=1}^nx_jy_j) / (\sum_{k=1}^nx_{k}^2))}
+$$
+Next, given distribution
+$$
+{\hat{y}_i = \sum_{j=1}^n(x_jx_i / (\sum_{k=1}^nx_{k}^2)y_j)}
+$$
+$$
+{\hat{y}_i = \sum_{j=1}^n(x_jx_i / (\sum_{k=1}^nx_{k}^2)y_j)}
+$$
+We can finally define a as
+$$
+{a_{j} = x_{j}x_i/(\sum_{k=1}^nx_{k}^2)}
+$$
+
+Re-entering this to the desired form, gives us our fitted values again
+$$
+{\hat{y}_i = \sum_{{j}=1}^na_{j}y_j}
+$$
+
+# Question 6
+Equations in 3.4 summarize the least squares approach to minimizing the RSS, and estimating the coefficients to derive the line of optimal fit
+
+As stated, the goal is minimizing RSS
+$$
+{RSS = \sum_{i=1}^n(y_i-\hat{\beta}_0-\hat{\beta}_{1}x_i)^2}
+$$
+The least squares approach equations are based on optimally reducing deviation of the individual sample x-val and y-vals from their mean
+
+Therefore, using these optimized coefficients, the linear regression can be written:
+$$
+\hat{y} = \hat{\beta}_0 + \hat{\beta}_1{x}
+$$ 
+
+We can substitute x for xbar, because that is the question
+$$
+\hat{y} = \hat{\beta}_0 + \hat{\beta}_1\bar{x}
+$$
+$$
+\hat{y} = (\bar{y} - \hat{\beta}_1\bar{x}) + \hat{\beta}_1\bar{x}
+$$
+$$
+\hat{y}= \bar{y}
+$$
+This shows the least square regression line will encompass (xbar, ybar)
+
+# Question 9
+## a
+```{r}
+library(ISLR)
+data(Auto)
+pairs(Auto)
+```
+
+## b
+```{r}
+drop = c('name')
+quant_auto = Auto[,!(names(Auto) %in% drop)] 
+cor(quant_auto)
+```
+## c
+```{r quant }
+mult_reg = lm(mpg~cylinders+displacement+horsepower+weight+acceleration+year+origin, data=quant_auto)
+summary(mult_reg)
+```
+
+i. Observing the output of the model, our F-statistic has a very small p-value meaning at least one of our predictors is significantly associated with the mpg outcome. To see which ones, we will look at our coeffs table
+
+ii. Here we see that displacement, weight, year, and origin seem to influence mpg, based on t-stat based significance
+
+iii. Coeff of .750773 for "year" indicates that per 1 year increase we can expect a .750773 increase in miles per gallon, considering all other variables are fixed
+
+##d
+```{r mult_reg quant_auto}
+plot(mult_reg)
+```
+Assessing the QQ residuals plot, we can see that our residuals are largely normal in the center of the distribution from [-2,2], however at the right tail of the distribution, there is large deviation from the Gaussian curve as well as missing data points. This insinuates a large tail at the right of the distribution, and we should be careful with other statistical assessment with the data that assume normality. 
+
+Leverage is a quantification of the amount the coeffs in the model would change if a particular observation were removed. Clearly, there are not many high leverage points, and no points that fall within the boundaries of Cook's distance, rather the data is clustered at the lower end of the graph. We can interpret this as indication that there are no highly influential data points altering the fit of the model. If we integrate the concept of bias-variance trade-off, a linear regression falls on heavier bias and less flexibility. For a poor fit of the model, we would likely see changes in residual value as leverage increased. We see a couple of points with high leverage, or influence on the model, although they are outside of the Cook's distance boundary, these could be outliers in the data set we can consider removing.
+
+##e
+To assess interactions, we can start with some plotting to ID potential trends in the data, which we can then quantify with the regression interaction assessment. 
+
+```{r Auto}
+keep = c('mpg','horsepower','weight','year','origin')
+pairs(Auto[,(names(Auto) %in% keep)])
+```
+What stands out to me is the trend between horsepower and weight, so lets assess that interaction in determining mpg. Additionally, there may be a slight interaction with weight and origin, lets add that as well.
+
+```{r quant auto}
+mult_reg_int = lm(mpg~origin+horsepower*weight+weight:origin, data=quant_auto)
+
+summary(mult_reg_int)
+```
+Here we see a couple interesting things, there is a significant interaction of horsepower and weight as expected, and independent effects of these variables are significant. Contrarily, there is no interaction effect of origin and weight, and the main effect of origin also is no longer significant as compared to the original regression model. These outcomes fit our scatter plotting quite well.
+
+# Question 15 
+## a
+```{r}
+library(MASS)
+data(Boston)
+drop = c('crim')
+predsNames = Boston[,!(names(Boston) %in% drop)] 
+
+#print(colnames(predsNames))
+
+for (i in colnames(predsNames)){
+  print(i)
+  print(summary(lm(crim~Boston[,i],data=Boston)))
+  
+}
+```
+We see from our printed simple linear regressions that all variables seem to have significant associations with per capita crime, we will need to dig in to the multiple regression to assess how these predictors potentially interact and effect the independent prediction of crime keeping all other vars fixed.
+
+## b
+```{r}
+summary(lm(crim~ ., data = Boston))
+```
+
+now we see several significant interactions among predictors and per capita crime are rendered insignificant , but some persist in the multiple regression. we can reject the null hypothesis for zn, dis, rad, black and medv
+
+## c
+As mentioned, in (a) there were several more significant interactions detected. When we took the multivariate approach, many of these relationships became insignificant
+```{r }
+
+univarCoeff = vector('numeric',0)
+for (i in colnames(predsNames)){
+  reg1 = (lm(crim~Boston[,i],data=Boston))
+  univarCoeff[i] = reg1$coefficients[2]
+}
+
+multivarCoeff = (lm(crim~ ., data = Boston))$coefficients[2:14]
+
+  plot(univarCoeff,multivarCoeff)
+```
+Here we summarized the differences in coefficients depending on model graphically. When using simple linear reg. it is only the predictors relationship to outcome, without factoring in what OTHER predictors may be latently influencing this relationship. the multivariate regression, holds these OTHER influences fixed, then looks at prediction potential. Therefor we can see graphically, what might be low value in multivariate regression can be inflated in the simple regression.
+
+## d
+```{r }
+predsNames = Boston[,!(names(Boston) %in% drop)] 
+
+for (i in colnames(predsNames)){
+  print(i)
+  print(summary(lm(crim~Boston[,i]+I(Boston[,i]^2)+I(Boston[,i]^3), data = Boston)))
+}
+```
+We see in our data that indus, nox, age, dis, ptratio, and medv have significant predictive assocation with a quadratic and cubic terms. For zn, rm, rad, and lstat the quadratic and polynomial terms are not significant. And some terms such as zn and black have significant associations to crime with linear terms. Therefore nonlinear components may help with model fit and performance given several terms had significant quadratic and cubic term associations with crime rate.
+
+# Chapter 4
+# Question 1
+Start with
+$$
+  P(x) = \frac {e^{\beta_0 + \beta_1x}}{1+e^{\beta_0 + \beta_1x}}
+$$
+Now
+$$\begin{aligned}
+  P(x)(1+^{\beta_0 + \beta_1x}) &= e^{\beta_0 + \beta_1x}\\
+    \frac{P(x)}{\frac{1}{1 + e^{\beta_0 + \beta_1x}}} &= e^{\beta_0 + \beta_1x}\\
+    \frac{P(x)}{1 - \frac{e^{\beta_0 + \beta_1x}}{1+ e^{\beta_0 + \beta_1x}}} &= e^{\beta_0 + \beta_1x}\\
+    \frac{P(x)}{1 - P(x)} &= e^{\beta_0 + \beta_1x}\\
+  \end{aligned} $$
+
+# Question 8 
+We should use the logistic regression, the KNN method may have lower avg err rate, but the actual training error rate is 0 due to the method (training = test as input data). So 18% corresponds to the training error and we must inflate *2 to get the true test error. As opposed to the logistic, with error of 30% for test
+# Question 10
+##a
+```{r}
+library(ISLR)
+data(Weekly)
+summary(Weekly)
+```
+```{r}
+pairs(Weekly[,1:8])
+```
+Here is a scatter matrix, we can see relationships between year and volume 
+
+
+## b
+```{r}
+logi_fit = glm(Direction ~ Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly, family=binomial)
+summary(logi_fit)
+```
+Here we see that Lag 2 shows significance as a predictor
+
+## c
+```{r}
+logi_probs = predict(logi_fit, type="response")
+logi_preds = rep("Down", 1089) # Vector of 1089 "Down" elements.
+logi_preds[logi_probs>0.5] = "Up" # Change "Down" to up when probability > 0.5.
+
+attach(Weekly)
+table(logi_preds,Direction)
+```
+Now we see frm the diagonals the percentage of correct pred days = 557 + 54 / 1089 = 56.1%; out of the 987 Up days presented 557/987 = 56.4% were correct, and this is the accuracy of our model
+
+## d
+```{r}
+train = (Year<2009)
+
+Test = Weekly[!train ,]
+Test_Direction= Direction[!train]
+
+logistic_fit2 = glm(Direction ~ Lag2, data=Weekly, family=binomial, subset=train)
+
+logistic_probs2 = predict(logistic_fit2,Test, type="response")
+logistic_preds2 = rep("Down", 104) 
+logistic_preds2[logistic_probs2>0.5] = "Up" 
+
+table(logistic_preds2,Test_Direction)
+```
+Now we see correct prediction on 56+9 = 65 days/104 total = 62.5% accuracy
+
+## e
+```{r}
+library(MASS)
+lda_fit = lda(Direction ~ Lag2, data=Weekly, subset=train)
+
+lda_pred = predict(lda_fit,Test)
+lda_class = lda_pred$class
+
+table(lda_class,Test_Direction)
+```
+Using LDA, we see an identical result; 65/104 = 62.5% accuracy
+
+## f
+```{r}
+qda_fit = qda(Direction ~ Lag2, data=Weekly, subset=train)
+qda_pred = predict(qda_fit,Test)
+qda_class = qda_pred$class
+table(qda_class,Test_Direction)
+```
+The QDA algorithm guesses all up, and yields 61/104 = 58.6% accuracy
+
+## g
+```{r}
+# Using KNN
+library(class)
+set.seed(1)
+train_x = Weekly[train,3]
+test_x = Weekly[!train,3]
+train_dir = Direction[train]
+
+# Changing from vector to matrix by adding dimensions
+dim(train_x) = c(985,1)
+dim(test_x) = c(104,1)
+
+# Predictions for K=1
+knn_pred = knn(train_x, test_x, train_dir, k=1)
+table(knn_pred, Test_Direction)
+```
+KNN w k= 1 yields 52/104 = 50% accuracy
+
+## h 
+The best classifier seems to be LDA and Logistic Regression
+
+## i
+
+# Question 11

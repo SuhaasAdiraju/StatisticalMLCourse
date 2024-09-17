@@ -1,0 +1,101 @@
+---
+title: "ISLR_Chapter4_LAB"
+author: "SuhaasAdiraju"
+date: "2024-09-15"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+install.packages("ggplot2")
+install.packages("corrplot")
+library(ISLR)
+```
+# Lab Chaper 4
+## 4.6.1
+```{r}
+data(Smarket)
+#lags refer to the age returns for each of the five previous trading days; volume the number of shares traded the previous day; today the percentage returns on the date in question; direction whether the market was up/down#
+dim(Smarket)
+names(Smarket)
+summary(Smarket)
+pairs(Smarket[,1:8])
+#on first pass data looks pretty messy/no obvious relationships, lets look at correlation matrix aswell#
+SmarketCormat = cor(Smarket[,1:8])
+plot(Smarket['Volume'][,])
+library(corrplot)
+corrplot(SmarketCormat)
+```
+
+## 4.6.2 Logistic Regression
+```{r}
+glm.fits = glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data = Smarket, family=binomial)
+summary(glm.fits)
+```
+```{r}
+glm.probs = predict(glm.fits,type='response')
+print(glm.probs[1:10])
+contrasts(Smarket['Direction'][,])
+```
+
+```{r}
+glm.pred=rep("Down",1250)
+glm.pred[glm.probs>.5]="Up"
+```
+
+```{r}
+table(glm.pred,Direction)
+corrpred = (145+507)/(145+507+141+457)
+trainErr = 1-corrpred
+```
+
+```{r}
+train = Smarket["Year"][,]<2005
+summary(train)
+```
+```{r}
+glm.fit.train = glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data = Smarket, family=binomial, subset = train)
+summary(glm.fit.train)
+
+glm.probs.HO = predict(glm.fit.train,Smarket[!train,],type="response")
+print(glm.probs.HO[1:10])
+```
+
+```{r}
+print(dim(Smarket[!train,]))
+print(length(glm.probs.HO))
+
+glm.pred = rep('Down',252)
+glm.pred[glm.probs.HO>.5] = 'UP'
+
+table(glm.pred,Smarket['Direction'][!train,])
+
+percentError_HO = (34+97)/(34+97+44+77)
+print(percentError_HO)
+percentCorr_HO = (44+77)/(34+97+44+77)
+print(percentCorr_HO)
+```
+```{r}
+glm.refit = glm(Direction~Lag1+Lag2, data = Smarket, family=binomial, subset = train)
+print(summary(glm.refit))
+
+glm.refit.probs = predict(glm.refit,Smarket[!train,],type="response")
+
+length(Smarket['Direction'][!train,])
+length(glm.refit.probs)
+
+remove(glm.pred)
+glm.pred = rep('Down',252)
+glm.pred[glm.refit.probs>.5] = 'UP'
+
+table(glm.pred,Smarket['Direction'][!train,]) 
+print((35+106)/(35+35+106+76))
+print(1-((35+106)/(35+35+106+76)))
+```
+
+## 4.6.3 LDA application
+```{r}
+print('COME BACK TO IT')
+```
