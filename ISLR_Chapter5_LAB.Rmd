@@ -1,0 +1,73 @@
+---
+title: "ISLR_Chapter5_LAB"
+author: "SuhaasAdiraju"
+date: "2024-09-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Chapter 5 lab, Cross-val and Bootstrapping
+# The Validation Set Approach
+```{r}
+library(ISLR)
+names(Auto)
+Auto['mpg']
+set.seed(1)
+trainAuto = sample (392, 196)
+```
+
+```{r}
+
+lm.fit = lm(mpg~horsepower, data = Auto, subset=trainAuto)
+summary(lm.fit)
+```
+
+```{r}
+
+lm.pred = predict(lm.fit,Auto)
+length(lm.pred)
+length(Auto['mpg'][,])
+mpgdata = (Auto['mpg'][,])
+meanMSE = mean((mpgdata[-trainAuto]-lm.pred[-trainAuto])^2)
+print(meanMSE)
+```
+
+```{r}
+
+lm.fit.Quad = lm(mpg~poly(horsepower,2),data=Auto,subset = trainAuto)
+
+lm.pred.Quad = predict(lm.fit.Quad,Auto)
+length(lm.pred.Quad)
+length(Auto['mpg'][,])
+mpgdata.Quad = (Auto['mpg'][,])
+
+meanMSE.Quad = mean((mpgdata.Quad[-trainAuto]-lm.pred.Quad[-trainAuto])^2)
+print(meanMSE.Quad)
+
+lm.fit.Tri = lm(mpg~poly(horsepower,3),data=Auto,subset = trainAuto)
+
+lm.pred.Tri = predict(lm.fit.Tri,Auto)
+length(lm.pred.Tri)
+length(Auto['mpg'][,])
+mpgdata.Tri = (Auto['mpg'][,])
+
+meanMSE.Tri = mean((mpgdata.Tri[-trainAuto]-lm.pred.Tri[-trainAuto])^2)
+
+print(meanMSE.Quad)
+print(meanMSE.Tri)
+
+```
+```{r}
+set.seed(2)
+trainAuto = sample(392,196)
+lm.fit.new = lm(mpg~horsepower,data=Auto,subset=trainAuto)
+
+mpgpred.new = predict(lm.fit.new,Auto)
+mpgdata = (Auto['mpg'][,])
+
+meanMSE.new = mean((mpgdata[-trainAuto]-mpgpred.new[-trainAuto])^2)
+print(meanMSE.new)
+```
+## COME BACK 
