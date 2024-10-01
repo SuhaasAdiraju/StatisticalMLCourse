@@ -1,0 +1,84 @@
+---
+title: "Suhaas HW 3 ISLR"
+author: "Suhaas Adiraju"
+date: "2024-10-01"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Homework 3 
+## Question 8
+install.packages('ISLR')
+library(ISLR)
+### a 
+```{r}
+data(USArrests)
+states = row.names(USArrests)
+names(USArrests)
+dim(USArrests)
+apply(USArrests,2,mean)
+apply(USArrests,2,var)
+```
+```{r}
+pr.out = prcomp(USArrests, scale=TRUE)
+pr.var = pr.out$sdev^2
+PVE = pr.var/sum(pr.var)
+PVE
+plot(cumsum (PVE ), xlab="Principal Component", ylab = "
+Cumulative Proportion of Variance Explained", ylim=c(0,1) ,
+type='b')
+```
+
+## b 
+```{r}
+pr.loadings = pr.out$rotation
+PC1var = var(pr.out$x[,1])
+PC2var = var(pr.out$x[,2])
+PC3var = var(pr.out$x[,3])
+PC4var = var(pr.out$x[,4])
+
+totalVar = (PC1var+PC2var+PC3var+PC4var)
+
+PC1.PVEhand = PC1var/totalVar
+
+PC2.PVEhand = PC2var/totalVar
+
+PC3.PVEhand = PC3var/totalVar
+
+PC4.PVEhand = PC4var/totalVar
+
+PC1.PVEhand
+PC2.PVEhand
+PC3.PVEhand
+PC4.PVEhand
+```
+## Question 9 
+### a
+```{r}
+Arr.complete = hclust(dist(USArrests),method='complete')
+plot(Arr.complete,main="Complete Linkage")
+```
+
+### b 
+```{r}
+print(sort(cutree(Arr.complete,3),decreasing=TRUE))
+```
+### c 
+```{r}
+Arrest.scaled = scale(USArrests)
+sd(Arrest.scaled[,1])
+sd(Arrest.scaled[,2])
+sd(Arrest.scaled[,3])
+sd(Arrest.scaled[,4])
+
+Arr.complete.scaled= hclust(dist(Arrest.scaled),method='complete')
+plot(Arr.complete.scaled,main="Complete Linkage")
+print(print(sort(cutree(Arr.complete,3),decreasing=TRUE))
+)
+```
+### d 
+
+
