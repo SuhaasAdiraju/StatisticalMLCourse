@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Homework 3 
 ## Question 8
-install.packages('ISLR')
 library(ISLR)
 ### a 
 ```{r}
@@ -76,9 +75,116 @@ sd(Arrest.scaled[,4])
 
 Arr.complete.scaled= hclust(dist(Arrest.scaled),method='complete')
 plot(Arr.complete.scaled,main="Complete Linkage")
-print(print(sort(cutree(Arr.complete,3),decreasing=TRUE))
-)
+print(sort(cutree(Arr.complete.scaled,3),decreasing=TRUE))
+
 ```
 ### d 
+```{r}
+threeclust = sum(cutree(Arr.complete,3)==3)
+threeclustScale = sum(cutree(Arr.complete.scaled,3)==3)
+twoclust = sum(cutree(Arr.complete,3)==2)
+twoclustScale = sum(cutree(Arr.complete.scaled,3)==2)
+oneclust = sum(cutree(Arr.complete,3)==1)
+oneclustScale = sum(cutree(Arr.complete.scaled,3)==1)
 
+print('3 groups raw vs scaled:')
+threeclust
+threeclustScale
+
+print('2 groups raw vs scaled:')
+twoclust
+twoclustScale
+
+print('1 group raw vs scaled:')
+oneclust
+oneclustScale
+```
+
+
+We can see using the cutree function, that prior to scaling, the clustering includes less states in larger clusters, and more states in smaller clusters. This likely is a function of the disproportionate variability in the unscaled dataset thus more states are more unique, and thereby more singleton clusters are created. Disproportionate variability in unscaled data can be driven by high values in certain categories, for example urban population in california will be extremely high, and given we are using euclidean distance will be far away from other states if unscaled, this has a disproportionate effect on the state's position wrt arrests, but is not what we are interested in. So yes, I would scale data, IN THIS CASE. in general, the problem is very contextual. For example, if we simply had number of arrests per state, with no other variables included, I perhaps would not need to scale.
+
+We can see in unscaled data california is in a singleton cluster, after scaling it is in a 2 state cluster. If we look at the crime values for california and compare to Nevada, whome it was most similarly clustered with, the crime values are highly similar
+```{r}
+USArrests['California',]
+USArrests['Nevada',]
+USArrests['Arizona',]
+```
+
+versus in the unscaled dendrogram, height wise it is similarly singleton to missouri or georgia. Which across all values seem much less similar to values seen in California  
+```{r}
+USArrests['California',]
+USArrests['Georgia',]
+USArrests['Missouri',]
+```
+
+## Question 11
+### a 
+```{r}
+getwd()
+Ch.Data= read.csv('C:\\Users\\suhaas.adiraju\\Desktop\\Statistical ML\\StatisticalMLCourse\\Ch10Ex11.csv',header=F)
+```
+
+### b
+```{r}
+sample = names(Ch.Data)
+cor.mat.genes= as.dist(1-cor((Ch.Data)))
+plot(hclust(cor.mat.genes,method='complete'),main='Correlation-based complete linkage clustering')
+
+cor.mat.genes= as.dist(1-cor((Ch.Data)))
+plot(hclust(cor.mat.genes,method='single'),main='Correlation-based single linkage clustering')
+
+cor.mat.genes= as.dist(1-cor((Ch.Data)))
+plot(hclust(cor.mat.genes,method='average'),main='Correlation-based average linkage clustering')
+```
+The separation of genes in to simply two groups is not trivial/automatic, but depends on the clustering used. none of the dendrograms only form two clusters, but using average and complete distances certainly provide a better 2 cluster estimation compared to single. Another way to show this result
+
+```{r}
+sort(cutree(hclust(cor.mat.genes,method='average'),2))
+sort(cutree(hclust(cor.mat.genes,method='complete'),2))
+sort(cutree(hclust(cor.mat.genes,method='single'),2))
+```
+We can see single linkage clustered every sample except for V19 in cluster 1, this is clearly not useful. 
+
+### c 
+There are several ways we can explore this question, I would start with very basic exploratory analysis and plotting. We know our two groups already, this is an advantage, we can average each gene(row) across samples, within each respective group of healthy versus diseased. Then use the pairs function to see if there are major differences plotting healthy versus diseased gene average values:
+
+```{r}
+healthy = apply(Ch.Data[,1:20],1,mean)
+clinical = apply(Ch.Data[,21:40],1,mean)
+gene.frame = data.frame(healthy,clinical)
+pairs(gene.frame)
+```
+
+Look at that! it seems that indeed there is a subgroup of genes that express much higher mean values in the clinical group. We could pull out the identity of these genes by setting a threshold and indexing the data frame
+```{r}
+clinical.hit.genes= which((gene.frame$clinical>1.0),useNames = TRUE)
+clinical.hit.genes
+```
+although this is useful information, when we average across samples in each group, we are assuming a lot of stability across samples or rather overlooking the within group variability, as well as other nuances. To take a more fine-grained approach of preserving individual sample contributions lets use PCA
+
+```{r}
+pr.out.gene = prcomp((Ch.Data), scale=TRUE)
+pr.var.gene = pr.out.gene$sdev^2
+PVE.gene = pr.var.gene/sum(pr.var.gene)
+PVE.gene
+plot(cumsum (PVE.gene ), xlab="Principal Component", ylab = "
+Cumulative Proportion of Variance Explained", ylim=c(0,1) ,
+)
+```
+We see from our cumulative plot and the proportion of variance explained values that our first component captures the highest proportion of variance, and all following components add about the same small amount of information. lets plot our data mapped in the first 2 components.
+```{r}
+plot(pr.out.gene$x[,'PC1'],pr.out.gene$x[,'PC2'],ylim = c(-10,10),main='Gene data projected on to first 2 PCs',ylab='PC2',xlab='PC1')
+
+```
+We can see in this plot the data varies a lot on PC1, and a little on PC2, and via the PC1 variance, there is a distinct data cloud 
+with large negative score values, these could be positive too, as PCA weights are identical up to sign changes. Basically, these genes differ alot among the samples. We should index them, and sort them, to see which genes they are and which are the most variable along PC1
+
+```{r}
+gene.hits.pca.idx = which(pr.out.gene$x[,'PC1'] <= -4,useNames = TRUE)
+top.genes = data.frame(gene.hits.pca.idx, -(pr.out.gene$x[gene.hits.pca.idx
+,'PC1']))
+sorted.top.genes = order(top.genes$X..pr.out.gene.x.gene.hits.pca.idx...PC1...,decreasing=TRUE)
+top.genes[sorted.top.genes,1]
+
+```
 
